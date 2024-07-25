@@ -17,8 +17,8 @@ GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
 st.set_page_config(
     page_title="Add a new book",
     page_icon="📖",
-    layout="centered",
-    initial_sidebar_state="expanded",
+    layout="wide",
+    initial_sidebar_state="collapsed",
 )
 
 st.title("Add a new book📚")

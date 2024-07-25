@@ -118,7 +118,7 @@ def get_google_books_info_simplified(query: str) -> dict | None:
         else:
             return {}
     except HttpError as e:
-        if e.response.status == 403 and "unknownLocation" in str(e):
+        if e.resp.status == 403 and "unknownLocation" in str(e):
             # Attempt to retry with a specified IP header for geolocation
             url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
             headers = {"X-Forwarded-For": "8.8.8.8"}  # Example IP address
