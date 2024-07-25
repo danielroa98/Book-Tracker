@@ -72,6 +72,7 @@ def get_google_books_info(query: str) -> dict | None:
         dict | None: A dictionary containing the book's information if found, or None if no information is found.
 
     """
+    print(f"[INFO] Key is: {GOOGLE_BOOKS_API_KEY}")
     url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
     try:
         res = requests.get(url)
