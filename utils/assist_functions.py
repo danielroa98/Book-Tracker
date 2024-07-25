@@ -3,11 +3,9 @@ import os
 from pyzbar.pyzbar import decode
 from PIL import Image
 import isbnlib
-from dotenv import load_dotenv
+import streamlit as st
 
-load_dotenv()
-
-GOOGLE_BOOKS_API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
+GOOGLE_BOOKS_API_KEY = st.secrets.api_keys.GOOGLE_BOOKS_API_KEY
 
 
 def build_google_books_query(book_info: dict) -> str:
