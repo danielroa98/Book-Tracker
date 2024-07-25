@@ -12,6 +12,43 @@ from googleapiclient.errors import HttpError
 
 GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
 
+
+def get_basic_info(isbn: str):
+    """Get a Book's Basic Information.
+
+    Retrieves book information based on the provided ISBN.
+
+    Parameters:
+        isbn (str): The ISBN of the book.
+
+    Returns:
+        dict: A dictionary containing the book information.
+    """
+    book_info = {}
+    max_retries = 3
+    delay = 60  # Initial delay of 60 seconds
+
+    for attempt in range(max_retries):
+        try:
+            book_info = isbnlib.meta(isbn)
+            return book_info
+        except isbnlib.dev._exceptions.ISBNLibHTTPError as e:
+            st.error(f"HTTP error occurred: {e}")
+            if "403" in str(e):
+                st.warning(
+                    f"Attempt {attempt + 1} of {max_retries}: Retrying after {delay} seconds..."
+                )
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
+            else:
+                break
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+            break
+
+    return book_info
+
+
 def build_google_books_query(book_info: dict) -> str:
     """Build Google Books Query.
 
@@ -137,6 +174,7 @@ def get_google_books_info_simplified(query: str) -> dict | None:
             st.error(f"Google Books API error: {e}")
         return {}
 
+
 def scan_barcode(image) -> str | None:
     """Scan Barcode.
 
@@ -153,24 +191,3 @@ def scan_barcode(image) -> str | None:
         barcode_data = barcode.data.decode("utf-8")
         return barcode_data
     return None
-
-
-def get_basic_info(isbn: str):
-    """Get a Book's Basic Information.
-
-    Retrieves book information based on the provided ISBN.
-
-    Parameters:
-        isbn (str): The ISBN of the book.
-
-    Returns:
-        dict: A dictionary containing the book information.
-    """
-    book_info = {}
-    try:
-        book_info = isbnlib.meta(isbn)
-    except isbnlib.dev._exceptions.ISBNLibHTTPError as e:
-        st.error(f"HTTP error occurred: {e}")
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-    return book_info
