@@ -10,6 +10,7 @@ import utils.assist_functions as af
 # Global Variables
 BOOK_INFO: dict = {}
 MORE_BOOK_INFO: dict = {}
+TEST_API = True
 
 GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
 
@@ -63,7 +64,9 @@ with st.container(border=True):
             else:
                 # Inform the user that no information is found for the ISBN
                 st.write("No information found for this ISBN.")
-            MORE_BOOK_INFO = af.get_google_books_info(query)
+            if TEST_API:
+                MORE_BOOK_INFO = af.get_google_books_info_simplified(query)
+            else: MORE_BOOK_INFO = af.get_google_books_info(query)
             if MORE_BOOK_INFO:
                 with st.expander(label="View Additional Information"):
                     # Get more book information based on a Google Books API query

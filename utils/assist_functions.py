@@ -6,6 +6,8 @@ from PIL import Image
 import isbnlib
 import streamlit as st
 import time
+from googleapiclient.discovery import build
+
 
 GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
 
@@ -39,23 +41,18 @@ def build_google_books_query(book_info: dict) -> str:
         'intitle:The+Great+Gatsby+inauthor:F.+Scott+Fitzgerald+inpublisher:Scribner+year:1925+lang:English'
 
     """
-    title = book_info.get("Title")
-    authors = book_info.get("Authors")
-    publisher = book_info.get("Publisher")
-    year = book_info.get("Year")
-    language = book_info.get("Language")
     query_parts = []
-    if title:
-        query_parts.append(f"intitle:{title}")
-    if authors:
-        for author in authors:
+    if book_info.get("Title"):
+        query_parts.append(f"intitle:{book_info.get('Title')}")
+    if book_info.get("Authors"):
+        for author in book_info.get("Authors"):
             query_parts.append(f"inauthor:{author}")
-    if publisher:
-        query_parts.append(f"inpublisher:{publisher}")
-    if year:
-        query_parts.append(f"year:{year}")
-    if language:
-        query_parts.append(f"lang:{language}")
+    if book_info.get("Publisher"):
+        query_parts.append(f"inpublisher:{book_info.get('Publisher')}")
+    if book_info.get("Year"):
+        query_parts.append(f"year:{book_info.get('Year')}")
+    if book_info.get("Language"):
+        query_parts.append(f"lang:{book_info.get('Language')}")
 
     query = "+".join(query_parts)
     return query
@@ -109,6 +106,14 @@ def get_google_books_info(query: str) -> dict | None:
         print(f"[ERROR] An error occurred: {e}")
     return None
 
+def get_google_books_info_simplified(query: str) -> dict | None:
+    service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
+    request = service.volumes().list(q=query)
+    response = request.execute()
+    if "items" in response:
+        return response["items"][0]["volumeInfo"]
+    else:
+        return {}
 
 def scan_barcode(image) -> str | None:
     """Scan Barcode.
