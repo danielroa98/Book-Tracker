@@ -1,10 +1,8 @@
 import streamlit as st
-from pyzbar.pyzbar import decode
 from PIL import Image
 import isbnlib
 import io
 import os
-import ctypes
 
 from utils.database_funcs import BookDatabase
 import utils.assist_functions as af
@@ -12,12 +10,6 @@ import utils.assist_functions as af
 # Global Variables
 BOOK_INFO: dict = {}
 MORE_BOOK_INFO: dict = {}
-
-# Ensure ZBar library path is set and manually load the library
-os.environ["DYLD_LIBRARY_PATH"] = "/opt/homebrew/opt/zbar/lib:" + os.environ.get(
-    "DYLD_LIBRARY_PATH", ""
-)
-ctypes.cdll.LoadLibrary("/opt/homebrew/opt/zbar/lib/libzbar.dylib")
 
 st.set_page_config(
     page_title="Add a new book",

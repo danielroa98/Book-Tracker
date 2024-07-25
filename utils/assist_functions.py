@@ -5,7 +5,7 @@ from PIL import Image
 import isbnlib
 import streamlit as st
 
-GOOGLE_BOOKS_API_KEY = st.secrets.api_keys.GOOGLE_BOOKS_API_KEY
+GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
 
 
 def build_google_books_query(book_info: dict) -> str:
