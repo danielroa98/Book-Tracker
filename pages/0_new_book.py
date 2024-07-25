@@ -22,8 +22,6 @@ st.set_page_config(
 
 st.title("Add a new book📚")
 
-st.markdown(GOOGLE_BOOKS_API_KEY)
-
 db = BookDatabase("books.db")
 
 # Prompt the user to choose an option: upload an image or take a picture
