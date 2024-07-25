@@ -123,9 +123,11 @@ def get_basic_info(isbn: str):
     Returns:
         dict: A dictionary containing the book information.
     """
+    book_info = {}
     try:
         book_info = isbnlib.meta(isbn)
+    except isbnlib.dev._exceptions.ISBNLibHTTPError as e:
+        st.error(f"HTTP error occurred: {e}")
     except Exception as e:
-        print(f"An error occurred: {e}")
-        book_info
+        st.error(f"An error occurred: {e}")
     return book_info
