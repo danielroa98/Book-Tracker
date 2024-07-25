@@ -7,6 +7,7 @@ import isbnlib
 import streamlit as st
 import time
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 
 GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
@@ -116,7 +117,7 @@ def get_google_books_info_simplified(query: str) -> dict | None:
             return response["items"][0]["volumeInfo"]
         else:
             return {}
-    except HTTPError as e:
+    except HttpError as e:
         if e.response.status == 403 and "unknownLocation" in str(e):
             # Attempt to retry with a specified IP header for geolocation
             url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
@@ -146,6 +147,7 @@ def get_google_books_info_simplified(query: str) -> dict | None:
 #         return response["items"][0]["volumeInfo"]
 #     else:
 #         return {}
+
 
 def scan_barcode(image) -> str | None:
     """Scan Barcode.
