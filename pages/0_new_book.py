@@ -11,6 +11,8 @@ import utils.assist_functions as af
 BOOK_INFO: dict = {}
 MORE_BOOK_INFO: dict = {}
 
+GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
+
 st.set_page_config(
     page_title="Add a new book",
     page_icon="📖",
@@ -19,6 +21,8 @@ st.set_page_config(
 )
 
 st.title("Add a new book📚")
+
+st.markdown(GOOGLE_BOOKS_API_KEY)
 
 db = BookDatabase("books.db")
 
