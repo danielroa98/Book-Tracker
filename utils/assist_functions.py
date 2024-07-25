@@ -1,9 +1,11 @@
 import requests
+from requests.exceptions import HTTPError
 import os
 from pyzbar.pyzbar import decode
 from PIL import Image
 import isbnlib
 import streamlit as st
+import time
 
 GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
 
@@ -71,27 +73,40 @@ def get_google_books_info(query: str) -> dict | None:
 
     """
     url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
-    res = requests.get(url)
-    if res.status_code == 200:
-        print(f"[INFO] Found a book's information!")
-        data = res.json()
-        if "items" in data:
-            vol_info = data["items"][0]["volumeInfo"]
-            return {
-                "title": vol_info.get("title", "N/A"),
-                "authors": ", ".join(vol_info.get("authors", [])),
-                "publisher": vol_info.get("publisher", "N/A"),
-                "publishedDate": vol_info.get("publishedDate", "N/A"),
-                "description": vol_info.get("description", "N/A"),
-                "pageCount": vol_info.get("pageCount", "N/A"),
-                "categories": ", ".join(vol_info.get("categories", [])),
-                "averageRating": vol_info.get("averageRating", "N/A"),
-                "thumbnail": vol_info.get("imageLinks", {}).get("thumbnail", "N/A"),
-                "infoLink": vol_info.get("infoLink", "N/A"),
-            }
-    else:
-        print(f"[ERROR] No book information found.")
-        return None
+    try:
+        res = requests.get(url)
+        if res.status_code == 200:
+            print(f"[INFO] Found a book's information!")
+            data = res.json()
+            if "items" in data:
+                vol_info = data["items"][0]["volumeInfo"]
+                return {
+                    "title": vol_info.get("title", "N/A"),
+                    "authors": ", ".join(vol_info.get("authors", [])),
+                    "publisher": vol_info.get("publisher", "N/A"),
+                    "publishedDate": vol_info.get("publishedDate", "N/A"),
+                    "description": vol_info.get("description", "N/A"),
+                    "pageCount": vol_info.get("pageCount", "N/A"),
+                    "categories": ", ".join(vol_info.get("categories", [])),
+                    "averageRating": vol_info.get("averageRating", "N/A"),
+                    "thumbnail": vol_info.get("imageLinks", {}).get("thumbnail", "N/A"),
+                    "infoLink": vol_info.get("infoLink", "N/A"),
+                }
+        else:
+            print(f"[ERROR] No book information found.")
+            return None
+    except HTTPError as http_err:
+        if res.status_code == 403:
+            st.error(
+                "HTTP error occurred: an HTTP error has occurred (403 Are you making many requests?)"
+            )
+            time.sleep(60)  # Wait for 60 seconds before retrying
+            return get_google_books_info(query)
+        else:
+            st.error(f"HTTP error occurred: {http_err}")
+    except Exception as e:
+        print(f"[ERROR] An error occurred: {e}")
+    return None
 
 
 def scan_barcode(image) -> str | None:
