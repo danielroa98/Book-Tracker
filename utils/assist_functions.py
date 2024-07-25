@@ -12,7 +12,6 @@ from googleapiclient.errors import HttpError
 
 GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
 
-
 def build_google_books_query(book_info: dict) -> str:
     """Build Google Books Query.
 
@@ -137,17 +136,6 @@ def get_google_books_info_simplified(query: str) -> dict | None:
         else:
             st.error(f"Google Books API error: {e}")
         return {}
-
-
-# def get_google_books_info_simplified(query: str) -> dict | None:
-#     service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
-#     request = service.volumes().list(q=query)
-#     response = request.execute()
-#     if "items" in response:
-#         return response["items"][0]["volumeInfo"]
-#     else:
-#         return {}
-
 
 def scan_barcode(image) -> str | None:
     """Scan Barcode.
