@@ -11,7 +11,6 @@ from utils.database_funcs import BookDatabase
 # Global Variables
 BOOK_INFO: dict = {}
 MORE_BOOK_INFO: dict = {}
-TEST_API = True
 
 GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
 
@@ -57,7 +56,6 @@ with st.container(border=True):
             st.write(f"ISBN: {isbn}")
             # Get book information based on the ISBN
             BOOK_INFO = af.get_basic_info(isbn)
-            query = af.build_google_books_query(book_info=BOOK_INFO)
             if BOOK_INFO:
                 # Display the book information
                 st.write("Book Information:")
@@ -65,18 +63,11 @@ with st.container(border=True):
             else:
                 # Inform the user that no information is found for the ISBN
                 st.write("No information found for this ISBN.")
-            if TEST_API:
-                MORE_BOOK_INFO = af.get_google_books_info_simplified(query)
-            else: MORE_BOOK_INFO = af.get_google_books_info(query)
-            if MORE_BOOK_INFO:
-                with st.expander(label="View Additional Information"):
-                    # Get more book information based on a Google Books API query
-                    # Display the book information
-                    st.write("Book Information:")
-                    st.write(MORE_BOOK_INFO)
-            else:
-                # Inform the user that no information is found for the ISBN
-                st.write("No additional information found for this book.")
+            with st.expander(label="View Additional Information"):
+                # Get more book information based on a Google Books API query
+                # Display the book information
+                st.write("Book Information:")
+                st.write(MORE_BOOK_INFO)
         else:
             # Inform the user that no barcode is found in the image
             st.write("No barcode found in the image.")
@@ -115,46 +106,31 @@ if BOOK_INFO:
             )
 
         with col2:
-            year = st.text_input(
-                "Year",
-                value=BOOK_INFO.get("Year", ""),
-                placeholder="Enter the year of publication.",
-            )
-            if MORE_BOOK_INFO:
-                pages = st.number_input(
-                    "Pages",
-                    value=MORE_BOOK_INFO.get("pageCount", ""),
-                    placeholder="Enter the number of pages in the book.",
-                    step=1,
-                )
-            else:
-                pages = st.number_input(
-                    "Pages",
-                    value=0,
-                    placeholder="Enter the number of pages in the book.",
-                    min_value=0,
-                    step=1,
-                )
             isbn = st.text_input(
                 "ISBN",
                 value=isbn,
                 placeholder="Enter the ISBN of the book.",
                 disabled=True,
             )
+            year = st.text_input(
+                "Year",
+                value=BOOK_INFO.get("Year", ""),
+                placeholder="Enter the year of publication.",
+            )
+            pages = st.number_input(
+                "Pages",
+                value=BOOK_INFO.get("pageCount", 0),
+                placeholder="Enter the number of pages in the book.",
+                min_value=0,
+                step=1,
+            )
 
         with desc2:
-            if MORE_BOOK_INFO:
-                description = st.text_area(
-                    "Description",
-                    value=MORE_BOOK_INFO.get("description", ""),
-                    placeholder="Enter a brief description of the book.",
-                )
-            else:
-                description = st.text_area(
-                    "Description",
-                    value="",
-                    placeholder="Enter a brief description of the book.",
-                )
+            description = st.text_area(
+                "Description",
+                value=BOOK_INFO.get("description", ""),
+                placeholder="Enter a brief description of the book.",
+            )
 
         with ord2:
             submitted = st.form_submit_button(
