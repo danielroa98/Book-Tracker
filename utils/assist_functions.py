@@ -1,13 +1,9 @@
-import os
-import re
 import time
 
-import isbnlib
 import requests
 import streamlit as st
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from PIL import Image
 from pyzbar.pyzbar import decode
 from requests.exceptions import HTTPError
 

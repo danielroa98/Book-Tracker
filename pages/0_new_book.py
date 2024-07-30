@@ -10,8 +10,6 @@ from utils.database_funcs import BookDatabase
 BOOK_INFO: dict = {}
 MORE_BOOK_INFO: dict = {}
 
-GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
-
 st.set_page_config(
     page_title="Add a new book",
     page_icon="📖",
@@ -61,11 +59,6 @@ with st.container(border=True):
             else:
                 # Inform the user that no information is found for the ISBN
                 st.write("No information found for this ISBN.")
-            with st.expander(label="View Additional Information"):
-                # Get more book information based on a Google Books API query
-                # Display the book information
-                st.write("Book Information:")
-                st.write(MORE_BOOK_INFO)
         else:
             # Inform the user that no barcode is found in the image
             st.write("No barcode found in the image.")
