@@ -63,10 +63,6 @@ def get_basic_info(isbn: str):
         else:
             return {"error": "No book information found."}
     except HttpError as err:
-        if err.resp.status == 403:
-            st.error(
-                "HTTP error occurred: an HTTP error has occurred (403 Are you making many requests?)"
-            )
         try:
             res = requests.get(url)
             if res.status_code == 200:
