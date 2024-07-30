@@ -53,6 +53,7 @@ def get_basic_info(isbn: str):
     """
     book_info_unclean = {}
     query = f"isbn:{isbn}"
+    url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
     try:
         service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
         request = service.volumes().list(q=query)
@@ -66,6 +67,15 @@ def get_basic_info(isbn: str):
             st.error(
                 "HTTP error occurred: an HTTP error has occurred (403 Are you making many requests?)"
             )
+        try:
+            res = requests.get(url)
+            if res.status_code == 200:
+                print(f"[INFO] Found a book's information!")
+                data = res.json()
+                if "items" in data:
+                    book_info_unclean = data["items"][0]["volumeInfo"]
+        except HTTPError as http_err:
+            st.error(f"HTTP error occurred: {http_err}")
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
