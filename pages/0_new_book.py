@@ -136,7 +136,7 @@ if BOOK_INFO:
                 )
             isbn = st.text_input(
                 "ISBN",
-                value=BOOK_INFO.get("ISBN-13", ""),
+                value=isbn,
                 placeholder="Enter the ISBN of the book.",
                 disabled=True,
             )
@@ -169,7 +169,7 @@ if BOOK_INFO:
                     page_count=int(pages),
                     year=int(year),
                 )
-                if "successfully" in submitted:
+                if "successfully" in insert_msg:
                     st.success(insert_msg)
                 else:
                     st.error(insert_msg)
