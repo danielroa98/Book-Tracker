@@ -117,7 +117,9 @@ if BOOK_INFO:
             )
             pages = st.number_input(
                 "Pages",
-                value=BOOK_INFO.get("pageCount", ""),
+                value=int(
+                    BOOK_INFO.get("pageCount", 0)
+                ),  # Provide a default value of 0
                 placeholder="Enter the number of pages in the book.",
                 step=1,
             )
