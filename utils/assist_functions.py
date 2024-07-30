@@ -11,16 +11,33 @@ GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
 
 
 def get_google_book_by_isbn(isbn: str) -> dict | None:
+    """Get Google Books by ISBN.
+
+    Retrieves book information from the Google Books API based on the provided ISBN.
+
+    Args:
+        isbn (str): The ISBN of the book.
+
+    Returns:
+        dict | None: A dictionary containing the book information if found, or None if no book is found.
+
+    Raises:
+        Exception: If an error occurs while fetching the book information.
+    """
+    query = f"isbn:{isbn}"
     try:
         service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
-        request = service.volumes().list(q=f"isbn:{isbn}")
+        request = service.volumes().list(q=query)
         res = request.execute()
         if "items" in res:
             return res["items"][0]["volumeInfo"]
         else:
             return {}
-    except HttpError as e:
-        return {"error": "An error occurred while fetching the book information."}
+    except HttpError as err:
+        url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
+
+    except Exception as e:
+        return {"error": f"An error occurred while fetching the book information.\n{e}"}
 
 
 def get_basic_info(isbn: str):
@@ -34,8 +51,24 @@ def get_basic_info(isbn: str):
         dict: A dictionary containing the book information.
 
     """
-    book_info = {}
-    book_info_unclean = get_google_book_by_isbn(isbn)
+    book_info_unclean = {}
+    query = f"isbn:{isbn}"
+    try:
+        service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
+        request = service.volumes().list(q=query)
+        res = request.execute()
+        if "items" in res:
+            book_info_unclean = res["items"][0]["volumeInfo"]
+        else:
+            return {"error": "No book information found."}
+    except HttpError as err:
+        if err.resp.status == 403:
+            st.error(
+                "HTTP error occurred: an HTTP error has occurred (403 Are you making many requests?)"
+            )
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+
     book_info = {
         "Title": book_info_unclean.get("title", ""),
         "Authors": book_info_unclean.get("authors", []),
@@ -49,6 +82,7 @@ def get_basic_info(isbn: str):
         "infoLink": book_info_unclean.get("infoLink", ""),
     }
     return book_info
+
 
 def build_google_books_query(book_info: dict) -> str:
     """Build Google Books Query.
@@ -107,7 +141,6 @@ def get_google_books_info(query: str) -> dict | None:
         dict | None: A dictionary containing the book's information if found, or None if no information is found.
 
     """
-    print(f"[INFO] Key is: {GOOGLE_BOOKS_API_KEY}")
     url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
     try:
         res = requests.get(url)
@@ -143,6 +176,7 @@ def get_google_books_info(query: str) -> dict | None:
     except Exception as e:
         print(f"[ERROR] An error occurred: {e}")
     return None
+
 
 def scan_barcode(image) -> str | None:
     """Scan Barcode.
