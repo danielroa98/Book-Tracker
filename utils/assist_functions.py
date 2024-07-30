@@ -1,16 +1,30 @@
-import requests
-from requests.exceptions import HTTPError
 import os
-from pyzbar.pyzbar import decode
-from PIL import Image
-import isbnlib
-import streamlit as st
+import re
 import time
+
+import isbnlib
+import requests
+import streamlit as st
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-
+from PIL import Image
+from pyzbar.pyzbar import decode
+from requests.exceptions import HTTPError
 
 GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
+
+
+def get_google_book_by_isbn(isbn: str) -> dict | None:
+    try:
+        service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
+        request = service.volumes().list(q=f"isbn:{isbn}")
+        res = request.execute()
+        if "items" in res:
+            return res["items"][0]["volumeInfo"]
+        else:
+            return {}
+    except HttpError as e:
+        return {"error": "An error occurred while fetching the book information."}
 
 
 def get_basic_info(isbn: str):
@@ -20,34 +34,25 @@ def get_basic_info(isbn: str):
 
     Parameters:
         isbn (str): The ISBN of the book.
-
     Returns:
         dict: A dictionary containing the book information.
+
     """
     book_info = {}
-    max_retries = 3
-    delay = 60  # Initial delay of 60 seconds
-
-    for attempt in range(max_retries):
-        try:
-            book_info = isbnlib.meta(isbn)
-            return book_info
-        except isbnlib.dev._exceptions.ISBNLibHTTPError as e:
-            st.error(f"HTTP error occurred: {e}")
-            if "403" in str(e):
-                st.warning(
-                    f"Attempt {attempt + 1} of {max_retries}: Retrying after {delay} seconds..."
-                )
-                time.sleep(delay)
-                delay *= 2  # Exponential backoff
-            else:
-                break
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
-            break
-
+    book_info_unclean = get_google_book_by_isbn(isbn)
+    book_info = {
+        "Title": book_info_unclean.get("title", ""),
+        "Authors": book_info_unclean.get("authors", []),
+        "Publisher": book_info_unclean.get("publisher", ""),
+        "Year": book_info_unclean.get("publishedDate", "").split("-")[0],
+        "description": book_info_unclean.get("description", ""),
+        "pageCount": book_info_unclean.get("pageCount", ""),
+        "categories": book_info_unclean.get("categories", []),
+        "averageRating": book_info_unclean.get("averageRating", ""),
+        "thumbnail": book_info_unclean.get("thumbnail", ""),
+        "infoLink": book_info_unclean.get("infoLink", ""),
+    }
     return book_info
-
 
 def build_google_books_query(book_info: dict) -> str:
     """Build Google Books Query.
@@ -142,38 +147,6 @@ def get_google_books_info(query: str) -> dict | None:
     except Exception as e:
         print(f"[ERROR] An error occurred: {e}")
     return None
-
-
-def get_google_books_info_simplified(query: str) -> dict | None:
-    try:
-        service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
-        request = service.volumes().list(q=query)
-        response = request.execute()
-        if "items" in response:
-            return response["items"][0]["volumeInfo"]
-        else:
-            return {}
-    except HttpError as e:
-        if e.resp.status == 403 and "unknownLocation" in str(e):
-            # Attempt to retry with a specified IP header for geolocation
-            url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
-            headers = {"X-Forwarded-For": "8.8.8.8"}  # Example IP address
-            try:
-                res = requests.get(url, headers=headers)
-                if res.status_code == 200:
-                    data = res.json()
-                    if "items" in data:
-                        return data["items"][0]["volumeInfo"]
-                    else:
-                        return {}
-                else:
-                    st.error(f"HTTP error occurred: {res.status_code} - {res.text}")
-            except Exception as retry_err:
-                st.error(f"Retry error occurred: {retry_err}")
-        else:
-            st.error(f"Google Books API error: {e}")
-        return {}
-
 
 def scan_barcode(image) -> str | None:
     """Scan Barcode.

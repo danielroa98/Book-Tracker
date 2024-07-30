@@ -1,6 +1,7 @@
-import sqlite3
 import os
+import sqlite3
 from typing import Optional, Tuple
+
 from pydantic.dataclasses import dataclass
 
 
