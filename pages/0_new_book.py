@@ -1,7 +1,5 @@
 import io
-import os
 
-import isbnlib
 import streamlit as st
 from PIL import Image
 
@@ -85,7 +83,7 @@ if BOOK_INFO:
         insert_msg = ""
 
         col1, col2 = st.columns(2)
-        desc1, desc2, desc3 = st.columns([1,3,1])
+        desc1, desc2, desc3 = st.columns([1, 3, 1])
         ord1, ord2, ord3 = st.columns(3)
 
         with col1:
@@ -119,7 +117,7 @@ if BOOK_INFO:
             )
             pages = st.number_input(
                 "Pages",
-                value=BOOK_INFO.get("pageCount", 0),
+                value=BOOK_INFO.get("pageCount", ""),
                 placeholder="Enter the number of pages in the book.",
                 min_value=0,
                 step=1,
