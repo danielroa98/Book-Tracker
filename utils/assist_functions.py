@@ -1,16 +1,15 @@
-import requests
-from requests.exceptions import HTTPError
 import os
-from pyzbar.pyzbar import decode
-from PIL import Image
-import isbnlib
-import streamlit as st
-import time
 import re
+import time
 
+import isbnlib
+import requests
+import streamlit as st
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-
+from PIL import Image
+from pyzbar.pyzbar import decode
+from requests.exceptions import HTTPError
 
 GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
 
@@ -40,11 +39,6 @@ def get_basic_info(isbn: str):
 
     """
     book_info = {}
-    # try:
-    #     book_info = isbnlib.meta(isbn)
-    # except Exception as e:
-    #     print(f"[ERROR] An error occurred with library ISBN:\n\t{e}")
-    #     print("[FAILSAFE] Trying with Google Books API...")
     book_info_unclean = get_google_book_by_isbn(isbn)
     book_info = {
         "Title": book_info_unclean.get("title", ""),
@@ -59,38 +53,6 @@ def get_basic_info(isbn: str):
         "infoLink": book_info_unclean.get("infoLink", ""),
     }
     return book_info
-
-
-# def google_query_isbn(isbn: str) -> dict:
-#     try:
-#         service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
-#         request = service.volumes().list(q=f"isbn:{isbn}")
-#         response = request.execute()
-#         if "items" in response:
-#             return response["items"][0]["volumeInfo"]
-#         else:
-#             return {}
-#     except HttpError as e:
-#         if e.resp.status == 403 and "unknownLocation" in str(e):
-#             # Attempt to retry with a specified IP header for geolocation
-#             url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
-#             headers = {"X-Forwarded-For": "8.8.8.8"}  # Example IP address
-#             try:
-#                 res = requests.get(url, headers=headers)
-#                 if res.status_code == 200:
-#                     data = res.json()
-#                     if "items" in data:
-#                         return data["items"][0]["volumeInfo"]
-#                     else:
-#                         return {}
-#                 else:
-#                     st.error(f"HTTP error occurred: {res.status_code} - {res.text}")
-#             except Exception as retry_err:
-#                 st.error(f"Retry error occurred: {retry_err}")
-#         else:
-#             st.error(f"Google Books API error: {e}")
-#         return {}
-
 
 def build_google_books_query(book_info: dict) -> str:
     """Build Google Books Query.
@@ -185,38 +147,6 @@ def get_google_books_info(query: str) -> dict | None:
     except Exception as e:
         print(f"[ERROR] An error occurred: {e}")
     return None
-
-
-def get_google_books_info_simplified(query: str) -> dict | None:
-    try:
-        service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
-        request = service.volumes().list(q=query)
-        response = request.execute()
-        if "items" in response:
-            return response["items"][0]["volumeInfo"]
-        else:
-            return {}
-    except HttpError as e:
-        if e.resp.status == 403 and "unknownLocation" in str(e):
-            # Attempt to retry with a specified IP header for geolocation
-            url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
-            headers = {"X-Forwarded-For": "8.8.8.8"}  # Example IP address
-            try:
-                res = requests.get(url, headers=headers)
-                if res.status_code == 200:
-                    data = res.json()
-                    if "items" in data:
-                        return data["items"][0]["volumeInfo"]
-                    else:
-                        return {}
-                else:
-                    st.error(f"HTTP error occurred: {res.status_code} - {res.text}")
-            except Exception as retry_err:
-                st.error(f"Retry error occurred: {retry_err}")
-        else:
-            st.error(f"Google Books API error: {e}")
-        return {}
-
 
 def scan_barcode(image) -> str | None:
     """Scan Barcode.
