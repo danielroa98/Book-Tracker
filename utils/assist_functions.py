@@ -126,7 +126,7 @@ def get_google_books_info(query: str) -> dict | None:
                     "publisher": vol_info.get("publisher", "N/A"),
                     "publishedDate": vol_info.get("publishedDate", "N/A"),
                     "description": vol_info.get("description", "N/A"),
-                    "pageCount": int(vol_info.get("pageCount", 0)),
+                    "pageCount": vol_info.get("pageCount", "N/A"),
                     "categories": ", ".join(vol_info.get("categories", [])),
                     "averageRating": vol_info.get("averageRating", "N/A"),
                     "thumbnail": vol_info.get("imageLinks", {}).get("thumbnail", "N/A"),
