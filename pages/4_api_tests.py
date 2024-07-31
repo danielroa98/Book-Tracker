@@ -107,18 +107,30 @@ with st.form("test_isbn"):
     if submitted:
         isbn = "9781982110574"
         query = f"isbn:{isbn}"
+        # url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
+        # st.write(f"URL: {url}")
+        # try:
+        #     res = requests.get(url)
+        #     st.write(f"Response: {res}\nStatus Code: {res.status_code}")
+        #     if res.status_code == 200:
+        #         print(f"[INFO] Found a book's information!")
+        #         data = res.json()
+        #         if "items" in data:
+        #             book_info_unclean = data["items"][0]["volumeInfo"]
+        #             st.write(data)
+        #     else:
+        #         st.write(f"An error occurred: {res}")
+        # except HTTPError as http_err:
+        #     st.error(f"HTTP error occurred: {http_err}")
+        # except Exception as e:
+        #     st.error(f"An error occurred: {e}")
+        import requests
+
         url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
-        st.write(f"URL: {url}")
-        try:
-            res = requests.get(url)
-            st.write(f"Response: {res}\nStatus Code: {res.status_code}")
-            if res.status_code == 200:
-                print(f"[INFO] Found a book's information!")
-                data = res.json()
-                if "items" in data:
-                    book_info_unclean = data["items"][0]["volumeInfo"]
-                    st.write(data)
-        except HTTPError as http_err:
-            st.error(f"HTTP error occurred: {http_err}")
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+
+        payload = {}
+        headers = {}
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        st.markdown(response.text)
