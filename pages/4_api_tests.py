@@ -126,7 +126,7 @@ with st.form("test_isbn"):
         #     st.error(f"An error occurred: {e}")
         import requests
 
-        url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
+        url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}&country=MX"
 
         payload = {}
         headers = {}
