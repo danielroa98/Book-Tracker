@@ -72,23 +72,14 @@ def get_basic_info_v2(isbn: str):
     query = f"isbn:{isbn}"
     url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={GOOGLE_BOOKS_API_KEY}"
     try:
-        service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
-        request = service.volumes().list(q=query)
-        res = request.execute()
-        if "items" in res:
-            book_info_unclean = res["items"][0]["volumeInfo"]
-        else:
-            return {"error": "No book information found."}
-    except HttpError as err:
-        try:
-            res = requests.get(url)
-            if res.status_code == 200:
-                print(f"[INFO] Found a book's information!")
-                data = res.json()
-                if "items" in data:
-                    book_info_unclean = data["items"][0]["volumeInfo"]
-        except HTTPError as http_err:
-            st.error(f"HTTP error occurred: {http_err}")
+        res = requests.get(url)
+        if res.status_code == 200:
+            print(f"[INFO] Found a book's information!")
+            data = res.json()
+            if "items" in data:
+                book_info_unclean = data["items"][0]["volumeInfo"]
+    except HTTPError as http_err:
+        st.error(f"HTTP error occurred: {http_err}")
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
