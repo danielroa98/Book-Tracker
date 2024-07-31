@@ -25,6 +25,7 @@ def get_basic_info(isbn: str):
     """
     book_info_unclean = {}
     query = f"isbn:{isbn}"
+    print(f"[INFO] TESTING INFO")
     try:
         service = build("books", "v1", developerKey=GOOGLE_BOOKS_API_KEY)
         request = service.volumes().list(q=query)
@@ -56,7 +57,7 @@ def get_basic_info(isbn: str):
     return book_info
 
 with st.form("test_isbn"):
-    isbn = st.text_area("Enter the ISBN of the book:", key="isbn")
+    isbn = st.text_input("Enter the ISBN of the book:", key="isbn")
     submitted = st.form_submit_button("Submit", help="Add a new book to the database.")
     if submitted:
         info = get_basic_info(isbn)
