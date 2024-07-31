@@ -1,50 +1,25 @@
 import os
 import sqlite3
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from pydantic.dataclasses import dataclass
 
 
 @dataclass
 class BookDatabase:
-
-    # db_name: str
     db_name: str = os.path.join(os.path.dirname(__file__), "..", "books.db")
+    bookshelf_db: str = os.path.join(os.path.dirname(__file__), "..", "bookshelf.db")
 
     def __post_init__(self):
-        """
-        Performs post-initialization tasks for the class.
-
-        This method is automatically called after the object has been initialized.
-        It is used to perform any additional setup or validation that needs to be done.
-
-        Parameters:
-            self: The instance of the class.
-
-        Returns:
-            None
-        """
         self.validate_db_existance()
 
     def validate_db_existance(self):
-        """
-        Checks if the database file exists. If not, initializes a new database.
-
-        Returns:
-            None
-        """
         if not os.path.exists(self.db_name):
             self.init_db(self.db_name)
+        if not os.path.exists(self.bookshelf_db):
+            self.init_bookshelf_db(self.bookshelf_db)
 
     def init_db(self, db_name: str) -> str:
-        """Initialize Database.
-
-        Initializes the database by creating the 'books' table if it doesn't exist.
-
-        Returns:
-            str: A message indicating the status of the initialization process.
-
-        """
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
         try:
@@ -66,10 +41,34 @@ class BookDatabase:
             )
             ret_msg = "Database initialized successfully!"
         except Exception as e:
-            ret_msg = f"There was an error!\n\t{e}"
+            ret_msg = f"There was an error initializing the books database!\n\t{e}"
         conn.commit()
         conn.close()
         return ret_msg
+
+    def init_bookshelf_db(self, db_name: str) -> str:
+        conn = sqlite3.connect(self.bookshelf_db)
+        c = conn.cursor()
+        try:
+            c.execute("PRAGMA foreign_keys = ON;")
+            c.execute(
+                """CREATE TABLE IF NOT EXISTS bookshelf (
+                            isbn TEXT PRIMARY KEY,
+                            owner TEXT,
+                            FOREIGN KEY (isbn) REFERENCES books(isbn) ON DELETE CASCADE,
+                            FOREIGN KEY (owner) REFERENCES users(username) ON DELETE CASCADE
+                    )
+                    """
+            )
+            ret_msg = f"Bookshelf Database with name {self.bookshelf_db} initialized successfully!"
+        except Exception as e:
+            ret_msg = f"There was an error initializing the bookshelf database!\n\t{e}"
+        conn.commit()
+        conn.close()
+        return ret_msg
+
+    def attach_bookshelf_db(self, conn):
+        conn.execute("ATTACH DATABASE ? AS bookshelf_db", (self.bookshelf_db,))
 
     def insert_book(
         self,
@@ -81,39 +80,23 @@ class BookDatabase:
         page_count: int,
         year: int,
     ) -> str:
-        """Insert Book.
-
-        Inserts a new book into the database.
-
-        Args:
-            isbn (str): The ISBN of the book.
-            title (str): The title of the book.
-            authors (str): The authors of the book.
-            publisher (str): The publisher of the book.
-            description (str): The description of the book.
-            page_count (int): The number of pages in the book.
-            year (int): The year the book was published.
-
-        Returns:
-            str: A message indicating the success or failure of the insertion.
-
-        """
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
         try:
             c.execute(
                 """
                 INSERT INTO books (isbn, title, authors, publisher, description, page_count, year, owned, current_page)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'No', 0)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'Yes', 0)
             """,
                 (isbn, title, authors, publisher, description, page_count, year),
             )
             ret_msg = f"Book {title} added successfully!"
         except Exception as e:
-            ret_msg = f"There was an error!\n\t{e}"
-        conn.commit()
-        conn.close()
-        return ret_msg
+            ret_msg = f"There was an error inserting the book!\n\t{e}"
+        finally:
+            conn.commit()
+            conn.close()
+            return ret_msg
 
     def get_book_by_isbn(
         self,
@@ -121,25 +104,16 @@ class BookDatabase:
     ) -> Optional[
         Tuple[str, str, str, str, str, int, int, Optional[str], Optional[str], int]
     ]:
-        """Get Book by ISBN.
-
-        Retrieves a book from the database based on the given ISBN.
-
-        Args:
-            isbn (str): The ISBN of the book to retrieve.
-
-        Returns:
-            tuple: A tuple representing the book's information from the database.
-                The tuple contains the following fields: (isbn, title, author, year).
-                Returns None if no book is found with the given ISBN.
-
-        """
         conn = sqlite3.connect(self.db_name)
-        c = conn.cursor()
-        c.execute("SELECT * FROM books WHERE isbn = ?", (isbn,))
-        book = c.fetchone()
-        conn.close()
-        return book
+        try:
+            c = conn.cursor()
+            c.execute("SELECT * FROM books WHERE isbn = ?", (isbn,))
+            book = c.fetchone()
+        except Exception as e:
+            return f"An error occurred: {e}"
+        finally:
+            conn.close()
+            return book
 
     def get_book_by_title(
         self,
@@ -147,50 +121,46 @@ class BookDatabase:
     ) -> Optional[
         Tuple[str, str, str, str, str, int, int, Optional[str], Optional[str], str, int]
     ]:
-        """Get Book.
-
-        Retrieves a book from the database based on the given ISBN.
-
-        Args:
-            isbn (str): The ISBN of the book to retrieve.
-
-        Returns:
-            tuple: A tuple representing the book's information from the database.
-                The tuple contains the following fields: (isbn, title, author, year).
-                Returns None if no book is found with the given ISBN.
-
-        """
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
-        c.execute("SELECT * FROM books WHERE title = ?", (title,))
-        book = c.fetchone()
-        conn.close()
-        return book
+        try:
+            c.execute("SELECT * FROM books WHERE title = ?", (title,))
+            book = c.fetchone()
+        except Exception as e:
+            return f"An error occurred: {e}"
+        finally:
+            conn.close()
+            return book
 
     def get_all_books(
         self,
     ) -> Optional[
-        Tuple[str, str, str, str, str, int, int, Optional[str], Optional[str], str, int]
+        List[
+            Tuple[
+                str,
+                str,
+                str,
+                str,
+                str,
+                int,
+                int,
+                Optional[str],
+                Optional[str],
+                str,
+                int,
+            ]
+        ]
     ]:
-        """Get All Books.
-
-        Retrieves all books from the database.
-
-        Returns:
-            list: A list of tuples representing the books in the database.
-                Each tuple contains the book information.
-
-        """
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
         try:
             c.execute("SELECT * FROM books")
+            books = c.fetchall()
         except Exception as e:
             return f"An error occurred: {e}"
-        books = c.fetchall()
-        conn.close()
-        return books
-
+        finally:
+            conn.close()
+            return books
 
     def update_book(
         self,
@@ -233,27 +203,104 @@ class BookDatabase:
             ret_msg = f"{title} with ISBN {isbn} updated successfully!"
         except Exception as e:
             ret_msg = f"An error occurred: {e}"
-        conn.close()
-        return ret_msg
+        finally:
+            conn.close()
+            return ret_msg
 
     def delete_entry(self, isbn: str) -> str:
-        """Delete Entry.
-
-        Deletes a book entry from the database based on the provided ISBN.
-
-        Args:
-            isbn (str): The ISBN of the book to be deleted.
-
-        Returns:
-            str: A message indicating the success or failure of the deletion operation.
-
-        """
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
+        ret_msg = ""
         try:
             c.execute("DELETE FROM books WHERE isbn = ?", (isbn,))
             ret_msg = f"Book with ISBN {isbn} deleted successfully!"
         except Exception as e:
             ret_msg = f"An error occurred: {e}"
-        conn.close()
+        finally:
+            conn.close()
         return ret_msg
+
+    def add_to_bookshelf(self, book_id: str, username: str) -> str:
+        conn = sqlite3.connect(self.db_name)
+        self.attach_bookshelf_db(conn)
+        c = conn.cursor()
+        try:
+            c.execute(
+                "INSERT INTO bookshelf_db.bookshelf (isbn, owner) VALUES (?, ?)",
+                (book_id, username),
+            )
+            conn.commit()
+            return f"Book with ISBN {book_id} added to your bookshelf!"
+        except Exception as e:
+            return f"An error occurred: {e}\n\tAdd To Bookshelf"
+        finally:
+            conn.close()
+
+    def get_from_bookshelf(self, username: str) -> Optional[list[Tuple]]:
+        try:
+            with sqlite3.connect(self.bookshelf_db) as bookshelf_conn:
+                bookshelf_conn.execute(f"ATTACH DATABASE '{self.db_name}' AS books_db")
+                cursor = bookshelf_conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT 
+                        books_db.books.isbn,
+                        books_db.books.title,
+                        books_db.books.authors,
+                        books_db.books.publisher,
+                        books_db.books.description,
+                        books_db.books.page_count,
+                        books_db.books.year,
+                        books_db.books.started_reading,
+                        books_db.books.ended_reading,
+                        books_db.books.owned,
+                        books_db.books.current_page
+                    FROM bookshelf 
+                    INNER JOIN books_db.books ON bookshelf.isbn = books_db.books.isbn
+                    WHERE owner = ?
+                    """,
+                    (username,),
+                )
+                books = cursor.fetchall()
+        except Exception as e:
+            return f"An error occurred: {e}\n\tGet From Bookshelf"
+        return books
+
+    def get_one_book_bookshelf(self, book_id: str, owner: str) -> Optional[Tuple]:
+        try:
+            with sqlite3.connect(self.bookshelf_db) as bookshelf_conn:
+                bookshelf_conn.execute(f"ATTACH DATABASE '{self.db_name}' AS books_db")
+                cursor = bookshelf_conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT
+                        books_db.books.isbn,
+                        books_db.books.title,
+                        books_db.books.authors,
+                        books_db.books.publisher,
+                        books_db.books.description,
+                        books_db.books.page_count,
+                        books_db.books.year,
+                        books_db.books.started_reading,
+                        books_db.books.ended_reading,
+                        books_db.books.owned,
+                        books_db.books.current_page
+                    FROM bookshelf
+                    INNER JOIN books_db.books ON bookshelf.isbn = books_db.books.isbn
+                    WHERE bookshelf.isbn = ? AND bookshelf.owner = ?
+                    """,
+                    (book_id, owner),
+                )
+                book = cursor.fetchone()
+        except Exception as e:
+            return f"An error occurred: {e}\n\tGet One Book Bookshelf"
+        return book
+
+    def remove_from_bookshelf(self, book_id: str, username: str) -> str:
+        try:
+            with sqlite3.connect(self.bookshelf_db) as bookshelf_conn:
+                cursor = bookshelf_conn.cursor()
+                cursor.execute("DELETE FROM bookshelf WHERE isbn = ? AND owner = ?", (book_id, username))
+                return f"Book with ISBN {book_id} removed from your bookshelf!"
+        except Exception as e:
+            return f"An error occurred: {e}\n\tRemove From Bookshelf"

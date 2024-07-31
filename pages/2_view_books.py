@@ -13,10 +13,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-st.title("View All Books 📚")
+# Retrieve the user ID from the session state
+user_id = st.session_state.get("username", None)
 
-db = BookDatabase("books.db")
-books = db.get_all_books()
+if user_id is None:
+    st.error("You must be logged in to add a book.")
+    st.stop()  # Stop the script here if the user is not logged in
+
+st.title(f"All of {user_id}'s Books 📚")
+
+db = BookDatabase("books.db", "bookshelf.db")
+user_books = db.get_from_bookshelf(user_id)[0]
 
 # Define data types dictionary
 dtypes_dict = {
@@ -35,7 +42,7 @@ dtypes_dict = {
 
 # Create DataFrame and apply data types
 books_df = pd.DataFrame(
-    books,
+    [user_books],
     columns=[
         "ISBN",
         "Title",

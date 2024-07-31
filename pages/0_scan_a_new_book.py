@@ -11,15 +11,22 @@ BOOK_INFO: dict = {}
 MORE_BOOK_INFO: dict = {}
 
 st.set_page_config(
-    page_title="Add a new book",
-    page_icon="📖",
+    page_title="Scan a new book",
+    page_icon="📷",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-st.title("Add a new book📚")
+# Retrieve the user ID from the session state
+user_id = st.session_state.get("username", None)
 
-db = BookDatabase("books.db")
+if user_id is None:
+    st.error("You must be logged in to add a book.")
+    st.stop()  # Stop the script here if the user is not logged in
+
+st.title("Scan a new book 📷")
+
+db = BookDatabase("books.db", "bookshelf.db")
 
 # Prompt the user to choose an option: upload an image or take a picture
 option = st.radio("Choose an option:", ("Upload an image", "Take a picture"))
@@ -69,7 +76,6 @@ st.divider()
 if BOOK_INFO:
     st.subheader("Do you want to add this book to your database?")
     st.text("Please confirm the details before adding the book.")
-    st.markdown(f"Page information: {BOOK_INFO.get('pageCount', 0)} type is of {type(BOOK_INFO.get('pageCount', 0))}")
 
     with st.form("add_book"):
         pages = 0
@@ -141,5 +147,10 @@ if BOOK_INFO:
                 )
                 if "successfully" in insert_msg:
                     st.success(insert_msg)
+                    user_msg = db.add_to_bookshelf(book_id=isbn, username=user_id)
+                    if "added" in user_msg:
+                        st.success(user_msg)
+                    else:
+                        st.error(user_msg)
                 else:
                     st.error(insert_msg)
