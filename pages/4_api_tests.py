@@ -112,7 +112,7 @@ with st.form("test_isbn"):
     submitted = st.form_submit_button("Submit", help="Add a new book to the database.")
     if submitted:
         info = get_basic_info(isbn)
-        st.json(info)
+        st.markdown(info)
         st.divider()
         info_v2 = get_basic_info_v2(isbn)
-        st.json(info_v2)
+        st.markdown(info_v2)
