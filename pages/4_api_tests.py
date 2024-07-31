@@ -114,5 +114,6 @@ with st.form("test_isbn"):
         info = get_basic_info(isbn)
         st.markdown(info)
         st.divider()
+        st.text("Version 2")
         info_v2 = get_basic_info_v2(isbn)
         st.markdown(info_v2)
