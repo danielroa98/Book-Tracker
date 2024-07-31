@@ -81,22 +81,24 @@ def get_basic_info_v2(isbn: str):
                 return book_info_unclean
     except HTTPError as http_err:
         st.error(f"HTTP error occurred: {http_err}")
+        return st.error(f"HTTP error occurred: {http_err}")
     except Exception as e:
         st.error(f"An error occurred: {e}")
+        return st.error(f"An error occurred: {e}")
 
-    book_info = {
-        "Title": book_info_unclean.get("title", ""),
-        "Authors": book_info_unclean.get("authors", []),
-        "Publisher": book_info_unclean.get("publisher", ""),
-        "Year": book_info_unclean.get("publishedDate", "").split("-")[0],
-        "description": book_info_unclean.get("description", ""),
-        "pageCount": book_info_unclean.get("pageCount", ""),
-        "categories": book_info_unclean.get("categories", []),
-        "averageRating": book_info_unclean.get("averageRating", ""),
-        "thumbnail": book_info_unclean.get("thumbnail", ""),
-        "infoLink": book_info_unclean.get("infoLink", ""),
-    }
-    return book_info
+    # book_info = {
+    #     "Title": book_info_unclean.get("title", ""),
+    #     "Authors": book_info_unclean.get("authors", []),
+    #     "Publisher": book_info_unclean.get("publisher", ""),
+    #     "Year": book_info_unclean.get("publishedDate", "").split("-")[0],
+    #     "description": book_info_unclean.get("description", ""),
+    #     "pageCount": book_info_unclean.get("pageCount", ""),
+    #     "categories": book_info_unclean.get("categories", []),
+    #     "averageRating": book_info_unclean.get("averageRating", ""),
+    #     "thumbnail": book_info_unclean.get("thumbnail", ""),
+    #     "infoLink": book_info_unclean.get("infoLink", ""),
+    # }
+    # return book_info
 
 
 with st.form("test_isbn"):
