@@ -102,9 +102,6 @@ with st.form("test_isbn"):
     isbn = st.text_input("Enter the ISBN of the book:", key="isbn")
     submitted = st.form_submit_button("Submit", help="Add a new book to the database.")
     if submitted:
-        info = get_basic_info(isbn)
-        st.markdown(info)
-        st.divider()
         st.text("Version 2")
         info_v2 = get_basic_info_v2(isbn)
         st.markdown(info_v2)
