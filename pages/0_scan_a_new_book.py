@@ -1,3 +1,6 @@
+# type: ignore
+"""Scan a New Book Page."""
+
 import io
 
 import streamlit as st
@@ -35,7 +38,9 @@ image = None
 
 if option == "Upload an image":
     # Allow the user to upload an image file
-    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+    uploaded_file = st.file_uploader(
+        "Choose an image...", type=["jpg", "jpeg", "png"]
+    )  # type: ignore
     if uploaded_file is not None:
         # Open the uploaded image file
         image = Image.open(uploaded_file)

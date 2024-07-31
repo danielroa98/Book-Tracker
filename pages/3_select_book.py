@@ -1,4 +1,6 @@
-import time
+# type: ignore
+"""Select Book."""
+
 from datetime import datetime
 
 import pandas as pd
@@ -22,7 +24,7 @@ if user_id is None:
 
 
 db = BookDatabase("books.db", "bookshelf.db")
-user_books = db.get_from_bookshelf(username=user_id)[0]
+user_books = db.get_from_bookshelf(username=user_id)[0]  # type: ignore
 
 if user_books:
 
@@ -67,7 +69,6 @@ if user_books:
     only_titles = sorted(books_df["Title"].unique())
 
     col1, col2 = st.columns([1, 4], gap="small")
-
 
     with col1:
         st.subheader("Select a book from the list below:")
@@ -178,7 +179,7 @@ if user_books:
 
                         submitted = st.form_submit_button(
                             "Update Book Info",
-                            help="Update the book's information in the database.",
+                            help="Update the book's info.",
                         )
 
     if selected_title:
@@ -192,8 +193,8 @@ if user_books:
                 description=description,
                 page_count=page_count,
                 year=year,
-                started_reading=str(started_reading) if started_reading else None,
-                ended_reading=str(finished_reading) if finished_reading else None,
+                started_reading=str(started_reading),
+                ended_reading=str(finished_reading),
                 owned=owned,
                 current_page=current_page,
             )
@@ -205,7 +206,7 @@ if user_books:
                     st.error(update_msg)
 
             if owned == "No":
-                rem_ans=db.remove_from_bookshelf(book_info[0], user_id)
+                rem_ans = db.remove_from_bookshelf(book_info[0], user_id)
                 if "removed" in rem_ans:
                     with col2:
                         st.success(rem_ans)
@@ -213,7 +214,7 @@ if user_books:
                     with col2:
                         st.error(rem_ans)
             elif owned == "Yes":
-                add_ans=db.add_to_bookshelf(book_info[0], user_id)
+                add_ans = db.add_to_bookshelf(book_info[0], user_id)
                 if "added" in add_ans:
                     with col2:
                         st.success(add_ans)

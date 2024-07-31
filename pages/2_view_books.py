@@ -1,5 +1,5 @@
-import time
-from datetime import datetime
+# type: ignore
+"""View All Books."""
 
 import pandas as pd
 import streamlit as st
@@ -61,13 +61,17 @@ books_df = books_df.astype(dtypes_dict)
 
 col1, col2 = st.columns([1, 6], gap="small")
 
+delta_val = round(
+    (books_df["Current Page"].sum() / books_df["Page Count"].sum()) * 100, 2
+)
+
 with col1:
     st.metric("Registered Books", value=books_df.shape[0])
     st.metric("Books Owned", value=books_df["Owned"].value_counts().get("Yes", 0))
     st.metric(
         "Read Pages",
         value=books_df["Current Page"].sum(),
-        delta=f'{round((books_df["Current Page"].sum()/books_df["Page Count"].sum())*100, 2)}%',
+        delta=f"{delta_val}%",
     )
     st.metric("Total Pages", value=books_df["Page Count"].sum())
 
@@ -78,7 +82,16 @@ with col2:
         use_container_width=True,
         hide_index=True,
         key="books_df",
-        column_order=("Title", "Authors", "Description", "Page Count", "Current Page", "Started Reading", "Finished Reading", "Owned"),
+        column_order=(
+            "Title",
+            "Authors",
+            "Description",
+            "Page Count",
+            "Current Page",
+            "Started Reading",
+            "Finished Reading",
+            "Owned",
+        ),
         column_config={
             "Title": "Book Title",
             "Authors": "Author(s)",
@@ -93,5 +106,5 @@ with col2:
             "Finished Reading": st.column_config.DatetimeColumn(
                 format="DD/MM/YYYY",
             ),
-        }
+        },
     )

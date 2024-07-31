@@ -1,10 +1,9 @@
-import io
+# type: ignore
+"""Select a New Book Page."""
 
-import streamlit as st
 import pandas as pd
-from PIL import Image
+import streamlit as st
 
-import utils.assist_functions as af
 from utils.database_funcs import BookDatabase
 
 # Global Variables
@@ -70,7 +69,7 @@ st.dataframe(books_df)
 
 only_titles = sorted(books_df["Title"].unique())
 
-col1, col2 = st.columns([4,3])
+col1, col2 = st.columns([4, 3])
 
 with col1:
     st.subheader("Select a book from the list below:")
