@@ -78,7 +78,7 @@ def get_basic_info_v2(isbn: str):
             data = res.json()
             if "items" in data:
                 book_info_unclean = data["items"][0]["volumeInfo"]
-                return book_info_unclean
+                return data
     except HTTPError as http_err:
         st.error(f"HTTP error occurred: {http_err}")
         return st.error(f"HTTP error occurred: {http_err}")
