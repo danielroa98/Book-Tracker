@@ -69,6 +69,7 @@ st.divider()
 if BOOK_INFO:
     st.subheader("Do you want to add this book to your database?")
     st.text("Please confirm the details before adding the book.")
+    st.markdown(f"Page information: {BOOK_INFO.get('pageCount', 0)} type is of {type(BOOK_INFO.get('pageCount', 0))}")
 
     with st.form("add_book"):
         pages = 0
