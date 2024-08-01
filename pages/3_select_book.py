@@ -1,7 +1,7 @@
 # type: ignore
 """Select Book."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 import streamlit as st
@@ -24,9 +24,11 @@ if user_id is None:
 
 
 db = BookDatabase("books.db", "bookshelf.db")
-user_books = db.get_from_bookshelf(username=user_id)[0]  # type: ignore
+all_user_books = db.get_from_bookshelf(username=user_id)  # type: ignore
 
-if user_books:
+user_books = [book for book in all_user_books]
+
+if all_user_books:
 
     st.title("View a Book 📕")
     # st.markdown(user_books)
@@ -49,7 +51,7 @@ if user_books:
     # Create DataFrame and apply data types
     books_df = pd.DataFrame(
         # books,
-        [user_books],
+        user_books,
         columns=[
             "ISBN",
             "Title",
@@ -96,28 +98,28 @@ if user_books:
                                 value=book_info[1],
                                 key="title",
                                 help="The title of the book.",
-                                disabled=False,
+                                disabled=True,
                             )
                             authors = st.text_input(
                                 label="Book's author(s)",
                                 value=book_info[2],
                                 key="authors",
                                 help="The author(s) of the book.",
-                                disabled=False,
+                                disabled=True,
                             )
                             publisher = st.text_input(
                                 label="Publisher",
                                 value=book_info[3],
                                 key="publisher",
                                 help="The publisher of the book.",
-                                disabled=False,
+                                disabled=True,
                             )
                             year = st.text_input(
                                 label="Year of Publication",
                                 value=book_info[6],
                                 key="year",
                                 help="The year the book was published.",
-                                disabled=False,
+                                disabled=True,
                             )
 
                         with book2:
@@ -126,14 +128,14 @@ if user_books:
                                 value=book_info[4],
                                 key="description",
                                 help="A brief description of the book.",
-                                disabled=False,
+                                disabled=True,
                             )
                             page_count = st.number_input(
                                 label="Page Count",
                                 value=book_info[5],
                                 key="page_count",
                                 help="The number of pages in the book.",
-                                disabled=False,
+                                disabled=True,
                                 min_value=0,
                                 step=1,
                                 format="%d",
@@ -159,43 +161,54 @@ if user_books:
                                 format="DD/MM/YYYY",
                                 max_value=datetime.now(),
                             )
-                            finished_reading = st.date_input(
-                                label="Date Finished Reading",
-                                value=pd.to_datetime(book_info[8], errors="coerce"),
-                                key="finished_reading",
-                                help="The date the book was finished.",
-                                format="DD/MM/YYYY",
-                                max_value=datetime.now(),
-                            )
+                            if current_page < page_count:
+                                st.info("You haven't finished your book.")
+                                finished_reading = (
+                                    started_reading + timedelta(days=365)
+                                ).strftime("%Y-%m-%d")
+                            else:
+                                finished_reading = st.date_input(
+                                    label="Date Finished Reading",
+                                    value=pd.to_datetime(book_info[8], errors="coerce"),
+                                    key="finished_reading",
+                                    help="The date the book was finished.",
+                                    format="DD/MM/YYYY",
+                                    max_value=datetime.now(),
+                                )
                             owned = st.selectbox(
                                 label="Owned",
-                                options=["Yes", "No"],
+                                options=["Owned", "Rented", "Burrowed", "No"],
                                 index=None,
                                 key="owned",
                                 help="Indicates whether you own the book.",
-                                disabled=False,
-                                placeholder=book_info[9],
+                                disabled=True,
+                                placeholder="Own",
                             )
 
-                        submitted = st.form_submit_button(
-                            "Update Book Info",
-                            help="Update the book's info.",
-                        )
+                        opt1, opt2 = st.columns(2)
+                        with opt1:
+                            updated_book = st.form_submit_button(
+                                "Update Book Info",
+                                help="Update the book's info.",
+                                type="primary",
+                            )
+
+                        with opt2:
+                            delete_book = st.form_submit_button(
+                                "Delete Book",
+                                help="Delete the book from your bookshelf.",
+                                type="secondary",
+                            )
 
     if selected_title:
         col1, col2 = st.columns(2)
-        if submitted:
-            update_msg = db.update_book(
-                isbn=book_info[0],
-                title=title,
-                authors=authors,
-                publisher=publisher,
-                description=description,
-                page_count=page_count,
-                year=year,
-                started_reading=str(started_reading),
-                ended_reading=str(finished_reading),
-                owned=owned,
+        if updated_book:
+            possible, update_msg = db.update_bookshelf(
+                book_id=book_info[0],
+                username=user_id,
+                date_started=started_reading,
+                date_ended=finished_reading,
+                owned="Own",
                 current_page=current_page,
             )
             if "successfully" in update_msg:
@@ -204,23 +217,33 @@ if user_books:
             else:
                 with col1:
                     st.error(update_msg)
-
-            if owned == "No":
-                rem_ans = db.remove_from_bookshelf(book_info[0], user_id)
-                if "removed" in rem_ans:
-                    with col2:
-                        st.success(rem_ans)
-                else:
-                    with col2:
-                        st.error(rem_ans)
-            elif owned == "Yes":
-                add_ans = db.add_to_bookshelf(book_info[0], user_id)
-                if "added" in add_ans:
-                    with col2:
-                        st.success(add_ans)
-                else:
-                    with col2:
-                        st.error(add_ans)
+        elif delete_book:
+            delete_msg = db.remove_from_bookshelf(
+                book_id=book_info[0], username=user_id
+            )
+            if "removed" in delete_msg:
+                with col2:
+                    st.success(delete_msg)
+                    st.rerun()
+            else:
+                with col2:
+                    st.error(delete_msg)
+            # if owned == "No":
+            #     rem_ans = db.remove_from_bookshelf(book_info[0], user_id)
+            #     if "removed" in rem_ans:
+            #         with col2:
+            #             st.success(rem_ans)
+            #     else:
+            #         with col2:
+            #             st.error(rem_ans)
+            # elif owned == "Owned":
+            #     add_ans = db.add_to_bookshelf(book_info[0], user_id)
+            #     if "added" in add_ans:
+            #         with col2:
+            #             st.success(add_ans)
+            #     else:
+            #         with col2:
+            #             st.error(add_ans)
 
 else:
-    st.title("You can view a book you own here.")
+    st.header("You have not added any books yet.")

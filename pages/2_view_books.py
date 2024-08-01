@@ -23,7 +23,13 @@ if user_id is None:
 st.title(f"All of {user_id}'s Books 📚")
 
 db = BookDatabase("books.db", "bookshelf.db")
-user_books = db.get_from_bookshelf(user_id)[0]
+all_user_books = db.get_from_bookshelf(user_id)
+
+if "error" in all_user_books:
+    st.error("You have not added any books yet.")
+    st.stop()
+
+user_books = [book for book in all_user_books]
 
 # Define data types dictionary
 dtypes_dict = {
@@ -42,7 +48,7 @@ dtypes_dict = {
 
 # Create DataFrame and apply data types
 books_df = pd.DataFrame(
-    [user_books],
+    user_books,
     columns=[
         "ISBN",
         "Title",

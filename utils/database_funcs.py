@@ -3,9 +3,13 @@
 
 import os
 import sqlite3
+from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
 
 from pydantic.dataclasses import dataclass
+
+now = datetime(year=2024, month=1, day=1).strftime("%Y-%m-%d")
+default_date = (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d")
 
 
 @dataclass
@@ -46,7 +50,11 @@ class BookDatabase:
         Returns:
             None
         """
-        self.validate_db_existence()
+        self.init_db(self.db_name)  # Always initialize the table
+        self.init_bookshelf_db(
+            self.bookshelf_db
+        )  # Always initialize the bookshelf table
+        self.validate_db_existence()  # Check other db components
 
     def validate_db_existence(self) -> None:
         """
@@ -79,11 +87,7 @@ class BookDatabase:
                             publisher TEXT,
                             description TEXT,
                             page_count INTEGER,
-                            year INTEGER,
-                            started_reading TEXT,
-                            ended_reading TEXT,
-                            owned TEXT,
-                            current_page INTEGER
+                            year INTEGER
                     )
                     """
             )
@@ -112,6 +116,10 @@ class BookDatabase:
                 """CREATE TABLE IF NOT EXISTS bookshelf (
                             isbn TEXT PRIMARY KEY,
                             owner TEXT,
+                            date_started TEXT,
+                            date_ended TEXT,
+                            owned TEXT,
+                            current_page INTEGER,
                             FOREIGN KEY (isbn) REFERENCES books(isbn) ON DELETE CASCADE,
                             FOREIGN KEY (owner) REFERENCES users(username) ON DELETE CASCADE
                     )
@@ -166,8 +174,8 @@ class BookDatabase:
         try:
             c.execute(
                 """
-                INSERT INTO books (isbn, title, authors, publisher, description, page_count, year, owned, current_page)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'Yes', 0)
+                INSERT INTO books (isbn, title, authors, publisher, description, page_count, year)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
                 (isbn, title, authors, publisher, description, page_count, year),
             )
@@ -223,10 +231,6 @@ class BookDatabase:
                 str,
                 int,
                 int,
-                Optional[str],
-                Optional[str],
-                str,
-                int,
             ]
         ]
         | str
@@ -243,15 +247,34 @@ class BookDatabase:
             - If no book is found, returns None.
             - If an error occurs during the retrieval process, returns an error message as a string.
         """
-        conn = sqlite3.connect(self.db_name)
-        c = conn.cursor()
         try:
-            c.execute("SELECT * FROM books WHERE title = ?", (title,))
-            book = c.fetchone()
+            with sqlite3.connect(self.bookshelf_db) as bookshelf_conn:
+                bookshelf_conn.execute(f"ATTACH DATABASE '{self.db_name}' AS books_db")
+                cursor = bookshelf_conn.cursor()
+                cursor.execute(
+                    """
+                      SELECT
+                        books_db.books.isbn,
+                        books_db.books.title,
+                        books_db.books.authors,
+                        books_db.books.publisher,
+                        books_db.books.description,
+                        books_db.books.page_count,
+                        books_db.books.year,
+                        bookshelf.date_started,
+                        bookshelf.date_ended,
+                        bookshelf.owned,
+                        bookshelf.current_page
+                      FROM bookshelf
+                      INNER JOIN books_db.books ON bookshelf.isbn = books_db.books.isbn
+                      WHERE title = ?
+                      """,
+                    (title,),
+                )
+            book = cursor.fetchone()
         except Exception as e:
             return f"An error occurred: {e}"
         finally:
-            conn.close()
             return book
 
     def get_all_books(
@@ -301,11 +324,10 @@ class BookDatabase:
         try:
             c.execute("SELECT * FROM books")
             books = c.fetchall()
-        except Exception as e:
-            return f"An error occurred: {e}"
-        finally:
             conn.close()
             return books
+        except Exception as e:
+            return f"An error occurred: {e}"
 
     def update_book(
         self,
@@ -316,10 +338,6 @@ class BookDatabase:
         description: str,
         page_count: int,
         year: int,
-        started_reading: Optional[str],
-        ended_reading: Optional[str],
-        owned: str,
-        current_page: int,
     ) -> str:
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
@@ -327,7 +345,7 @@ class BookDatabase:
             c.execute(
                 """
                 UPDATE books
-                SET title = ?, authors = ?, publisher = ?, description = ?, page_count = ?, year = ?, started_reading = ?, ended_reading = ?, owned = ?, current_page = ?
+                SET title = ?, authors = ?, publisher = ?, description = ?, page_count = ?, year = ?,
                 WHERE isbn = ?
                 """,
                 (
@@ -337,11 +355,6 @@ class BookDatabase:
                     description,
                     page_count,
                     year,
-                    started_reading,
-                    ended_reading,
-                    owned,
-                    current_page,
-                    isbn,
                 ),
             )
             conn.commit()
@@ -365,13 +378,14 @@ class BookDatabase:
             conn.close()
         return ret_msg
 
+    # Bookshelf Functions
     def add_to_bookshelf(self, book_id: str, username: str) -> str:
-        conn = sqlite3.connect(self.db_name)
+        conn = sqlite3.connect(self.bookshelf_db)
         self.attach_bookshelf_db(conn)
         c = conn.cursor()
         try:
             c.execute(
-                "INSERT INTO bookshelf_db.bookshelf (isbn, owner) VALUES (?, ?)",
+                f"INSERT INTO bookshelf (isbn, owner, date_started, date_ended, owned, current_page) VALUES (?, ?, {str(now)}, {str(default_date)}, 'Owned', 0)",
                 (book_id, username),
             )
             conn.commit()
@@ -380,6 +394,45 @@ class BookDatabase:
             return f"An error occurred: {e}\n\tAdd To Bookshelf"
         finally:
             conn.close()
+
+    def update_bookshelf(
+        self,
+        book_id: str,
+        username: str,
+        date_started: str,
+        date_ended: str,
+        owned: str,
+        current_page: int,
+    ) -> tuple[bool, str]:
+        try:
+            with sqlite3.connect(self.bookshelf_db) as bookshelf_conn:
+                cursor = bookshelf_conn.cursor()
+                cursor.execute(
+                    """
+                    UPDATE bookshelf
+                    SET date_started = ?, date_ended = ?, owned = ?, current_page = ?
+                    WHERE isbn = ? AND owner = ?
+                    """,
+                    (date_started, date_ended, owned, current_page, book_id, username),
+                )
+                return (True, f"Book with ISBN {book_id} updated successfully!")
+        except Exception as e:
+            return (False, f"An error occurred: {e}\n\tUpdate Bookshelf")
+
+    def check_bookshelf_entry(self, book_id: str, username: str) -> tuple[bool, str]:
+        try:
+            with sqlite3.connect(self.bookshelf_db) as bookshelf_conn:
+                cursor = bookshelf_conn.cursor()
+                cursor.execute(
+                    "SELECT * FROM bookshelf WHERE isbn = ? AND owner = ?",
+                    (book_id, username),
+                )
+                book = cursor.fetchone()
+                if book:
+                    return (True, "Book already exists in your bookshelf!")
+                return (False, "Book does not exist in your bookshelf.")
+        except Exception as e:
+            return (False, f"An error occurred: {e}\n\tCheck Bookshelf Entry")
 
     def get_from_bookshelf(self, username: str) -> Optional[list[Tuple]] | str:
         try:
@@ -396,10 +449,10 @@ class BookDatabase:
                         books_db.books.description,
                         books_db.books.page_count,
                         books_db.books.year,
-                        books_db.books.started_reading,
-                        books_db.books.ended_reading,
-                        books_db.books.owned,
-                        books_db.books.current_page
+                        bookshelf.date_started,
+                        bookshelf.date_ended,
+                        bookshelf.owned,
+                        bookshelf.current_page
                     FROM bookshelf
                     INNER JOIN books_db.books ON bookshelf.isbn = books_db.books.isbn
                     WHERE owner = ?
@@ -426,10 +479,10 @@ class BookDatabase:
                         books_db.books.description,
                         books_db.books.page_count,
                         books_db.books.year,
-                        books_db.books.started_reading,
-                        books_db.books.ended_reading,
-                        books_db.books.owned,
-                        books_db.books.current_page
+                        bookshelf.date_started,
+                        bookshelf.date_ended,
+                        bookshelf.owned,
+                        bookshelf.current_page
                     FROM bookshelf
                     INNER JOIN books_db.books ON bookshelf.isbn = books_db.books.isbn
                     WHERE bookshelf.isbn = ? AND bookshelf.owner = ?

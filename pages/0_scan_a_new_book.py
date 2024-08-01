@@ -2,6 +2,7 @@
 """Scan a New Book Page."""
 
 import io
+from time import sleep
 
 import streamlit as st
 from PIL import Image
@@ -32,7 +33,9 @@ st.title("Scan a new book 📷")
 db = BookDatabase("books.db", "bookshelf.db")
 
 # Prompt the user to choose an option: upload an image or take a picture
-option = st.radio("Choose an option:", ("Upload an image", "Take a picture"))
+option = st.radio(
+    "Choose an option:", ("Upload an image", "Take a picture", "Enter ISBN Manually")
+)
 
 image = None
 
@@ -50,6 +53,21 @@ elif option == "Take a picture":
     if cam_image is not None:
         # Open the captured image from the camera
         image = Image.open(io.BytesIO(cam_image.getvalue()))
+elif option == "Enter ISBN Manually":
+    isbn = st.text_input(
+        "Enter the ISBN of the book",
+        placeholder="Enter the ISBN of the book.",
+    )
+    if isbn:
+        # Get book information based on the ISBN
+        BOOK_INFO = af.get_basic_info(isbn)
+        if BOOK_INFO:
+            # Display the book information
+            st.write("Book Information:")
+            st.write(BOOK_INFO)
+        else:
+            # Inform the user that no information is found for the ISBN
+            st.write("No information found for this ISBN.")
 
 with st.container(border=True):
     if image:
@@ -140,22 +158,20 @@ if BOOK_INFO:
             submitted = st.form_submit_button(
                 "Submit", help="Add a new book to the database."
             )
-            if submitted:
-                insert_msg = db.insert_book(
-                    isbn=isbn,
-                    title=title,
-                    authors=authors,
-                    publisher=publisher,
-                    description=description,
-                    page_count=int(pages),
-                    year=int(year),
-                )
-                if "successfully" in insert_msg:
-                    st.success(insert_msg)
-                    user_msg = db.add_to_bookshelf(book_id=isbn, username=user_id)
-                    if "added" in user_msg:
-                        st.success(user_msg)
-                    else:
-                        st.error(user_msg)
-                else:
-                    st.error(insert_msg)
+            st.text("Please confirm the details before adding the book.")
+        if submitted:
+            insert_msg = db.insert_book(
+                isbn=isbn,
+                title=title,
+                authors=authors,
+                publisher=publisher,
+                description=description,
+                page_count=int(pages),
+                year=int(year),
+            )
+            if "successfully" in insert_msg:
+                st.success(insert_msg)
+                sleep(3)
+                st.rerun()
+            else:
+                st.error(insert_msg)
