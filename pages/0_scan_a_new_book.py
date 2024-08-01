@@ -1,4 +1,8 @@
+# type: ignore
+"""Scan a New Book Page."""
+
 import io
+from time import sleep
 
 import streamlit as st
 from PIL import Image
@@ -11,24 +15,35 @@ BOOK_INFO: dict = {}
 MORE_BOOK_INFO: dict = {}
 
 st.set_page_config(
-    page_title="Add a new book",
-    page_icon="📖",
+    page_title="Scan a new book",
+    page_icon="📷",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-st.title("Add a new book📚")
+# Retrieve the user ID from the session state
+user_id = st.session_state.get("username", None)
 
-db = BookDatabase("books.db")
+if user_id is None:
+    st.error("You must be logged in to add a book.")
+    st.stop()  # Stop the script here if the user is not logged in
+
+st.title("Scan a new book 📷")
+
+db = BookDatabase("books.db", "bookshelf.db")
 
 # Prompt the user to choose an option: upload an image or take a picture
-option = st.radio("Choose an option:", ("Upload an image", "Take a picture"))
+option = st.radio(
+    "Choose an option:", ("Upload an image", "Take a picture", "Enter ISBN Manually")
+)
 
 image = None
 
 if option == "Upload an image":
     # Allow the user to upload an image file
-    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+    uploaded_file = st.file_uploader(
+        "Choose an image...", type=["jpg", "jpeg", "png"]
+    )  # type: ignore
     if uploaded_file is not None:
         # Open the uploaded image file
         image = Image.open(uploaded_file)
@@ -38,6 +53,21 @@ elif option == "Take a picture":
     if cam_image is not None:
         # Open the captured image from the camera
         image = Image.open(io.BytesIO(cam_image.getvalue()))
+elif option == "Enter ISBN Manually":
+    isbn = st.text_input(
+        "Enter the ISBN of the book",
+        placeholder="Enter the ISBN of the book.",
+    )
+    if isbn:
+        # Get book information based on the ISBN
+        BOOK_INFO = af.get_basic_info(isbn)
+        if BOOK_INFO:
+            # Display the book information
+            st.write("Book Information:")
+            st.write(BOOK_INFO)
+        else:
+            # Inform the user that no information is found for the ISBN
+            st.write("No information found for this ISBN.")
 
 with st.container(border=True):
     if image:
@@ -69,7 +99,6 @@ st.divider()
 if BOOK_INFO:
     st.subheader("Do you want to add this book to your database?")
     st.text("Please confirm the details before adding the book.")
-    st.markdown(f"Page information: {BOOK_INFO.get('pageCount', 0)} type is of {type(BOOK_INFO.get('pageCount', 0))}")
 
     with st.form("add_book"):
         pages = 0
@@ -129,17 +158,20 @@ if BOOK_INFO:
             submitted = st.form_submit_button(
                 "Submit", help="Add a new book to the database."
             )
-            if submitted:
-                insert_msg = db.insert_book(
-                    isbn=isbn,
-                    title=title,
-                    authors=authors,
-                    publisher=publisher,
-                    description=description,
-                    page_count=int(pages),
-                    year=int(year),
-                )
-                if "successfully" in insert_msg:
-                    st.success(insert_msg)
-                else:
-                    st.error(insert_msg)
+            st.text("Please confirm the details before adding the book.")
+        if submitted:
+            insert_msg = db.insert_book(
+                isbn=isbn,
+                title=title,
+                authors=authors,
+                publisher=publisher,
+                description=description,
+                page_count=int(pages),
+                year=int(year),
+            )
+            if "successfully" in insert_msg:
+                st.success(insert_msg)
+                sleep(3)
+                st.rerun()
+            else:
+                st.error(insert_msg)
