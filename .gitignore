@@ -180,3 +180,5 @@ pyrightconfig.json
 .env
 *.db
 *.yaml
+Notebooks/*
+*.ipynb

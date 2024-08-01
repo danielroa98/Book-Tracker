@@ -1,10 +1,6 @@
-import time
-from datetime import datetime
+"""View Reading Stats."""
 
-import pandas as pd
 import streamlit as st
-
-from utils.database_funcs import BookDatabase
 
 st.set_page_config(
     page_title="My Reading Stats",
