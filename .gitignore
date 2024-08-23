@@ -182,3 +182,7 @@ pyrightconfig.json
 *.yaml
 Notebooks/*
 *.ipynb
+
+# Custom paths
+.DS_Store
+.devcontainer/devcontainer.json
