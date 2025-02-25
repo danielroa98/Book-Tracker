@@ -186,3 +186,5 @@ Notebooks/*
 # Custom paths
 .DS_Store
 .devcontainer/devcontainer.json
+notebooks/
+*.ipynb

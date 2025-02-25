@@ -8,7 +8,7 @@ from PIL import Image
 from pyzbar.pyzbar import decode  # type: ignore
 from requests.exceptions import HTTPError
 
-GOOGLE_BOOKS_API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
+GOOGLE_BOOKS_API_KEY = st.secrets.google_api.GOOGLE_BOOKS_API_KEY
 
 
 def get_basic_info(isbn: str) -> dict | None:

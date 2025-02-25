@@ -14,7 +14,8 @@ st.set_page_config(
 )
 
 # Retrieve the user ID from the session state
-user_id = st.session_state.get("username", None)
+# user_id = st.session_state.get("username", None)
+user_id = st.session_state.get("email", None)
 
 if user_id is None:
     st.error("You must be logged in to add a book.")

@@ -22,7 +22,8 @@ st.set_page_config(
 )
 
 # Retrieve the user ID from the session state
-user_id = st.session_state.get("username", None)
+# user_id = st.session_state.get("username", None)
+user_id = st.session_state.get("email", None)
 
 if user_id is None:
     st.error("You must be logged in to add a book.")
@@ -54,20 +55,22 @@ elif option == "Take a picture":
         # Open the captured image from the camera
         image = Image.open(io.BytesIO(cam_image.getvalue()))
 elif option == "Enter ISBN Manually":
-    isbn = st.text_input(
-        "Enter the ISBN of the book",
-        placeholder="Enter the ISBN of the book.",
-    )
-    if isbn:
-        # Get book information based on the ISBN
-        BOOK_INFO = af.get_basic_info(isbn)
-        if BOOK_INFO:
-            # Display the book information
-            st.write("Book Information:")
-            st.write(BOOK_INFO)
-        else:
-            # Inform the user that no information is found for the ISBN
-            st.write("No information found for this ISBN.")
+    with st.form("search_isbn"):
+        isbn = st.text_input(
+            "Enter the ISBN of the book",
+            placeholder="Enter the ISBN of the book.",
+        )
+        submitted = st.form_submit_button("Search", help="Search for the book.")
+        if isbn:
+            # Get book information based on the ISBN
+            BOOK_INFO = af.get_basic_info(isbn)
+            if BOOK_INFO:
+                # Display the book information
+                st.write("Book Information:")
+                st.write(BOOK_INFO)
+            else:
+                # Inform the user that no information is found for the ISBN
+                st.write("No information found for this ISBN.")
 
 with st.container(border=True):
     if image:
