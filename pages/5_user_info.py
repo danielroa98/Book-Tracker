@@ -1,4 +1,5 @@
 """My Information."""
+
 import streamlit as st
 from supabase_utils.auth import SupabaseAuth
 from supabase import create_client

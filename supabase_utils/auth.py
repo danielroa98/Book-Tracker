@@ -3,7 +3,7 @@
 import streamlit as st
 from supabase import create_client, Client
 from pydantic.dataclasses import dataclass
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -31,16 +31,12 @@ class SupabaseAuth:
     #     except Exception as e:
     #         return f"An error occurred:\n{e}"
 
-    def register_user(self,
-                      email: str,
-                      password: str,
-                      first_name: str,
-                      last_name: str,
-                      username: str) -> str:
+    def register_user(
+        self, email: str, password: str, first_name: str, last_name: str, username: str
+    ) -> str:
         try:
             # Register the user
-            user = self.supabase.auth.sign_up(
-                {"email": email, "password": password})
+            user = self.supabase.auth.sign_up({"email": email, "password": password})
             user_id = user.user.id
 
             # Insert into profiles table
